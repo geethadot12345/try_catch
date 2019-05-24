@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xml-module="http://www.mulesoft.org/schema/mule/xml-module" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="25ebdaf8-9b2c-463a-b58b-22ee9b31d5b9" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<sub-flow name="create_and_send_to_queue" doc:id="cfda0b86-4a95-4118-9a06-9316171c9575" >
+		<set-variable value='#[%dw 2.0
+output application/java
+---
+payload.college.id as String default ""]' doc:name="Set Variable" doc:id="a7bad7f4-6f83-40f3-ac7b-82414dc73232" variableName="collegeId" />
+		<logger level="INFO" doc:name="Logger" doc:id="b43bb9b6-f062-45aa-a294-18c27799f597" message="#[vars.collegeId]" />
+		<set-variable value="#[now()]" doc:name="Set Variable" doc:id="9f446bad-ed40-4b7b-9003-b5cc41f5af88" variableName="co_id"/>
+		<logger level="INFO" doc:name="Logger" doc:id="d60f9139-40f2-4113-bf72-ed0b7ef1c059" message="#[vars.co_id]"/>
+		<ee:transform doc:name="Transform Message" doc:id="b8fc5ec7-d9fd-496a-bd1c-aa4ddb067e42">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="collegeName"><![CDATA[%dw 2.0
+output application/java
+---
+payload.college.name as String default ""]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="e1caa7bd-a988-4258-aea4-25cac8dc9f1f">
+			<when expression='#[vars.collegeName == "bhojreddy"]'>
+				<logger level="INFO" doc:name="Logger" doc:id="2853bae1-2242-4f09-9031-f3fa936af4bf" />
+				<choice doc:name="Choice" doc:id="35ddd66c-9fc4-48bf-ad70-9ced5e5b8000" >
+					<when expression="#[vars.i==2]">
+						<logger level="INFO" doc:name="Logger" doc:id="6365449f-8514-4a9e-adab-ed0efc2e8dc3" message="hey bhoj reddy called..." />
+						<ee:transform doc:name="Transform Message" doc:id="4634e688-4a7f-44b0-a2b6-ddc96b22117b">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+---
+{
+	address:payload.college.address
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+						<ee:transform doc:name="Transform Message" doc:id="a387a5e7-5cff-44d3-af4b-ef32c5cef70a">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload.address ++ {co_id:vars.co_id}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+						<logger level="INFO" doc:name="Logger" doc:id="c7f3d66b-e08c-47c3-b012-4ac97177a1f6" message="#[payload]" />
+						<set-variable value="#[%dw 2.0
+output application/json
+---
+vars.acc++[payload]]" doc:name="Set Variable" doc:id="20ba9553-5b8a-475f-b131-fdea72d8bad9" variableName="acc" />
+						<logger level="INFO" doc:name="Logger" doc:id="1ee74e28-7f00-45ea-b8c6-19b1aee24f1e" message="#[vars.acc]" />
+					</when>
+				</choice>
+			</when>
+			<otherwise>
+				<logger level="INFO" doc:name="Logger" doc:id="a50fea7a-6507-4e22-95ed-bb9beed7fa3f" message="hey this is different college" />
+				<ee:transform doc:name="Transform Message" doc:id="8a0d701d-4484-48be-9ac3-837843a97bfd" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+{
+	address: payload.college.address
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<ee:transform doc:name="Transform Message" doc:id="7a5b98df-cdba-415e-a41c-9e6ba0691209">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload.address ++ {co_id:vars.co_id}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="02133cd2-238a-4df6-ad87-0734197a71bb" message="#[payload]"/>
+				<set-variable value='#[%dw 2.0
+output application/json
+---
+vars.acc++[payload]]' doc:name="Set Variable" doc:id="93976106-174b-45c8-8add-eb0348490b67" variableName="acc" />
+				<logger level="INFO" doc:name="Logger" doc:id="3eb7b241-438e-4235-814a-5597970186bc" message="#[vars.acc]"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<flow name="try_catchFlow" doc:id="ab648d4f-54b6-4fd5-a409-223eee30dd00" >
+		<http:listener doc:name="Listener" doc:id="11317259-e0e2-4d8f-bd26-162709fc3bd9" config-ref="HTTP_Listener_config"/>
+	</flow>
+	<flow name="xml-exampleFlow" doc:id="6fc417d4-7b5d-4780-9b26-8c3ede160949" >
+		<http:listener doc:name="Listener" doc:id="228a70f7-3466-4a84-bff5-d3e4dab30f66" config-ref="HTTP_Listener_config" path="/tryCatch"/>
+		<set-variable value="#[[]]" doc:name="Set Variable" doc:id="db6e5ec8-771f-470f-a02c-dcb48b3fe6fb" variableName="acc"/>
+		<set-variable value="#[0]" doc:name="Set Variable" doc:id="08715020-f4f6-4fc0-9146-25153e3d541d" variableName="i"/>
+		<ee:transform doc:name="Transform Message" doc:id="76ca393c-6ed1-4100-bea2-542047ccd34c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.resultArray1]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="d7b183fc-62a7-4094-8945-4985999646ab" >
+			<set-variable value="#[vars.i+1]" doc:name="Set Variable" doc:id="002c0eb6-bcdc-418d-af1a-c8b4f412f121" variableName="i"/>
+			<logger level="INFO" doc:name="Logger" doc:id="6af099e4-8bbf-4086-8374-1e9506e597ca" message="#[vars.i]"/>
+			<ee:transform doc:name="Transform Message" doc:id="2dc565e0-23a8-4e6c-a402-43520cce175e" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+read(payload.xmlpayload, "application/xml")]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<logger level="INFO" doc:name="Logger" doc:id="00976a93-68e8-476d-ad50-aae4d2059ef8" message="payload after extracting from json object ::: #[payload]"/>
+			<flow-ref doc:name="Flow Reference" doc:id="f86fdc45-7986-49a0-9fc8-0aa290c43961" name="create_and_send_to_queue" />
+		</foreach>
+	</flow>
+</mule>
